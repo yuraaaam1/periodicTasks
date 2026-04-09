@@ -15,10 +15,14 @@ import (
 	transporthttp "example.com/taskservice/internal/transport/http"
 	swaggerdocs "example.com/taskservice/internal/transport/http/docs"
 	httphandlers "example.com/taskservice/internal/transport/http/handlers"
+	scheduleusecase "example.com/taskservice/internal/usecase/schedule"
 	"example.com/taskservice/internal/usecase/task"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	_ = godotenv.Load()
+
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
@@ -36,10 +40,15 @@ func main() {
 	defer pool.Close()
 
 	taskRepo := postgresrepo.New(pool)
-	taskUsecase := task.NewService(taskRepo)
+	taskUsecase := task.NewService(taskRepo, logger)
 	taskHandler := httphandlers.NewTaskHandler(taskUsecase)
+
+	scheduleRepo := postgresrepo.NewScheduleRepository(pool)
+	scheduleUsecase := scheduleusecase.NewService(scheduleRepo, taskRepo, logger)
+	scheduleHandler := httphandlers.NewScheduleHandler(scheduleUsecase)
+
 	docsHandler := swaggerdocs.NewHandler()
-	router := transporthttp.NewRouter(taskHandler, docsHandler)
+	router := transporthttp.NewRouter(taskHandler, scheduleHandler, docsHandler, logger)
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
@@ -74,7 +83,7 @@ type config struct {
 func loadConfig() config {
 	cfg := config{
 		HTTPAddr:    envOrDefault("HTTP_ADDR", ":8080"),
-		DatabaseDSN: envOrDefault("DATABASE_DSN", "postgres://postgres:postgres@localhost:5432/taskservice?sslmode=disable"),
+		DatabaseDSN: os.Getenv("DATABASE_DSN"),
 	}
 
 	if cfg.DatabaseDSN == "" {

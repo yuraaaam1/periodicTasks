@@ -93,14 +93,15 @@ func (r *Repository) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *Repository) List(ctx context.Context) ([]taskdomain.Task, error) {
+func (r *Repository) List(ctx context.Context, limit, offset int) ([]taskdomain.Task, error) {
 	const query = `
 		SELECT id, title, description, status, created_at, updated_at
 		FROM tasks
 		ORDER BY id DESC
+		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.pool.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, err
 	}

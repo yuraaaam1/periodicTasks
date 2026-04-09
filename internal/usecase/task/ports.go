@@ -11,7 +11,7 @@ type Repository interface {
 	GetByID(ctx context.Context, id int64) (*taskdomain.Task, error)
 	Update(ctx context.Context, task *taskdomain.Task) (*taskdomain.Task, error)
 	Delete(ctx context.Context, id int64) error
-	List(ctx context.Context) ([]taskdomain.Task, error)
+	List(ctx context.Context, limit, offset int) ([]taskdomain.Task, error)
 }
 
 type Usecase interface {
@@ -19,7 +19,7 @@ type Usecase interface {
 	GetByID(ctx context.Context, id int64) (*taskdomain.Task, error)
 	Update(ctx context.Context, id int64, input UpdateInput) (*taskdomain.Task, error)
 	Delete(ctx context.Context, id int64) error
-	List(ctx context.Context) ([]taskdomain.Task, error)
+	List(ctx context.Context, limit, offset int) ([]taskdomain.Task, error)
 }
 
 type CreateInput struct {

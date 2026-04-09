@@ -98,7 +98,9 @@ func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
-	tasks, err := h.usecase.List(r.Context())
+	limit, offset := parsePagination(r)
+
+	tasks, err := h.usecase.List(r.Context(), limit, offset)
 	if err != nil {
 		writeUsecaseError(w, err)
 		return
@@ -163,4 +165,23 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	w.WriteHeader(status)
 
 	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func parsePagination(r *http.Request) (limit, offset int) {
+	limit = 20
+	offset = 0
+
+	if v := r.URL.Query().Get("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			limit = n
+		}
+	}
+
+	if v := r.URL.Query().Get("offset"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			offset = n
+		}
+	}
+
+	return limit, offset
 }
