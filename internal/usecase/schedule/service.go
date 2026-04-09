@@ -312,6 +312,28 @@ func validateInput(
 		}
 	}
 
+	switch schedType {
+	case scheduledomain.TypeDaily:
+		dayOfMonth = nil
+		dates = nil
+		parity = nil
+	case scheduledomain.TypeMonthly:
+		dayInterval = nil
+		startDate = nil
+		dates = nil
+		parity = nil
+	case scheduledomain.TypeSpecificDates:
+		dayInterval = nil
+		startDate = nil
+		dayOfMonth = nil
+		parity = nil
+	case scheduledomain.TypeEvenOdd:
+		dayInterval = nil
+		startDate = nil
+		dayOfMonth = nil
+		dates = nil
+	}
+
 	return normalizedInput{
 		Title:       title,
 		Description: description,

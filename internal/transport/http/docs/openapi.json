@@ -3,7 +3,7 @@
   "info": {
     "title": "Task Service API",
     "version": "1.0.0",
-    "description": "CRUD API for tasks built with clean architecture."
+    "description": "API for task management with scheduling support."
   },
   "servers": [
     {
@@ -14,6 +14,10 @@
     {
       "name": "Tasks",
       "description": "Operations with tasks"
+    },
+    {
+      "name": "Schedules",
+      "description": "Operations with schedules and task generation"
     }
   ],
   "paths": {
@@ -21,6 +25,18 @@
       "get": {
         "tags": ["Tasks"],
         "summary": "List tasks",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 100, "minimum": 1 }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "default": 0, "minimum": 0 }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Task list",
@@ -64,12 +80,7 @@
         "tags": ["Tasks"],
         "summary": "Get task by ID",
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer", "format": "int64", "minimum": 1 }
-          }
+          { "$ref": "#/components/parameters/ID" }
         ],
         "responses": {
           "200": {
@@ -87,12 +98,7 @@
         "tags": ["Tasks"],
         "summary": "Update task",
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer", "format": "int64", "minimum": 1 }
-          }
+          { "$ref": "#/components/parameters/ID" }
         ],
         "requestBody": {
           "required": true,
@@ -119,21 +125,169 @@
         "tags": ["Tasks"],
         "summary": "Delete task",
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer", "format": "int64", "minimum": 1 }
-          }
+          { "$ref": "#/components/parameters/ID" }
         ],
         "responses": {
           "204": { "description": "Deleted" },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
+    },
+    "/api/v1/schedules": {
+      "get": {
+        "tags": ["Schedules"],
+        "summary": "List schedules",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 100, "minimum": 1 }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer", "default": 0, "minimum": 0 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedule list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Schedule" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Schedules"],
+        "summary": "Create schedule",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateScheduleRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created schedule",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Schedule" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/v1/schedules/{id}": {
+      "get": {
+        "tags": ["Schedules"],
+        "summary": "Get schedule by ID",
+        "parameters": [
+          { "$ref": "#/components/parameters/ID" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedule",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Schedule" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Schedules"],
+        "summary": "Update schedule",
+        "parameters": [
+          { "$ref": "#/components/parameters/ID" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateScheduleRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated schedule",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Schedule" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Schedules"],
+        "summary": "Delete schedule",
+        "parameters": [
+          { "$ref": "#/components/parameters/ID" }
+        ],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/schedules/{id}/generate": {
+      "post": {
+        "tags": ["Schedules"],
+        "summary": "Generate tasks for a date range",
+        "description": "Creates tasks for all dates matching the schedule within the given range. Idempotent — repeated calls for the same period do not create duplicates.",
+        "parameters": [
+          { "$ref": "#/components/parameters/ID" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GenerateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List of newly created tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Task" }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
     }
   },
   "components": {
+    "parameters": {
+      "ID": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer", "format": "int64", "minimum": 1 }
+      }
+    },
     "responses": {
       "BadRequest": {
         "description": "Bad request",
@@ -157,14 +311,8 @@
         "type": "object",
         "required": ["title"],
         "properties": {
-          "title": {
-            "type": "string",
-            "example": "Prepare release"
-          },
-          "description": {
-            "type": "string",
-            "example": "Collect release notes and check migrations"
-          },
+          "title": { "type": "string", "example": "Обход пациентов" },
+          "description": { "type": "string", "example": "Обход в палатах 3 и 4" },
           "status": {
             "type": "string",
             "enum": ["new", "in_progress", "done"],
@@ -176,14 +324,8 @@
         "type": "object",
         "required": ["title", "status"],
         "properties": {
-          "title": {
-            "type": "string",
-            "example": "Prepare release"
-          },
-          "description": {
-            "type": "string",
-            "example": "Collect release notes and check migrations"
-          },
+          "title": { "type": "string", "example": "Обход пациентов" },
+          "description": { "type": "string", "example": "Обход в палатах 3 и 4" },
           "status": {
             "type": "string",
             "enum": ["new", "in_progress", "done"],
@@ -195,32 +337,95 @@
         "type": "object",
         "properties": {
           "id": { "type": "integer", "format": "int64", "example": 1 },
-          "title": { "type": "string", "example": "Prepare release" },
-          "description": {
-            "type": "string",
-            "example": "Collect release notes and check migrations"
-          },
+          "title": { "type": "string", "example": "Обход пациентов (2026-04-07)" },
+          "description": { "type": "string", "example": "Обход в палатах 3 и 4" },
           "status": {
             "type": "string",
             "enum": ["new", "in_progress", "done"],
             "example": "new"
           },
-          "created_at": {
+          "created_at": { "type": "string", "format": "date-time", "example": "2026-04-07T10:00:00Z" },
+          "updated_at": { "type": "string", "format": "date-time", "example": "2026-04-07T10:00:00Z" }
+        }
+      },
+      "CreateScheduleRequest": {
+        "type": "object",
+        "required": ["title", "schedule_type"],
+        "properties": {
+          "title": { "type": "string", "example": "Обзвон пациентов" },
+          "description": { "type": "string", "example": "Ежедневный обзвон" },
+          "schedule_type": {
             "type": "string",
-            "format": "date-time",
-            "example": "2026-03-24T00:00:00Z"
+            "enum": ["daily", "monthly", "specific_dates", "even_odd"],
+            "example": "daily"
           },
-          "updated_at": {
+          "day_interval": {
+            "type": "integer",
+            "description": "For daily: repeat every N days",
+            "example": 1
+          },
+          "start_date": {
             "type": "string",
             "format": "date-time",
-            "example": "2026-03-24T00:00:00Z"
+            "description": "For daily: start date of the rhythm",
+            "example": "2026-01-01T00:00:00Z"
+          },
+          "day_of_month": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30,
+            "description": "For monthly: day of the month",
+            "example": 15
+          },
+          "dates": {
+            "type": "array",
+            "items": { "type": "string", "format": "date-time" },
+            "description": "For specific_dates: list of dates",
+            "example": ["2026-05-01T00:00:00Z", "2026-06-01T00:00:00Z"]
+          },
+          "parity": {
+            "type": "string",
+            "enum": ["even", "odd"],
+            "description": "For even_odd: even or odd days of the month",
+            "example": "even"
           }
+        }
+      },
+      "Schedule": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64", "example": 1 },
+          "title": { "type": "string", "example": "Обзвон пациентов" },
+          "description": { "type": "string", "example": "Ежедневный обзвон" },
+          "schedule_type": {
+            "type": "string",
+            "enum": ["daily", "monthly", "specific_dates", "even_odd"],
+            "example": "daily"
+          },
+          "day_interval": { "type": "integer", "example": 1 },
+          "start_date": { "type": "string", "format": "date-time", "example": "2026-01-01T00:00:00Z" },
+          "day_of_month": { "type": "integer", "example": 15 },
+          "dates": {
+            "type": "array",
+            "items": { "type": "string", "format": "date-time" }
+          },
+          "parity": { "type": "string", "enum": ["even", "odd"], "example": "even" },
+          "created_at": { "type": "string", "format": "date-time", "example": "2026-04-07T10:00:00Z" },
+          "updated_at": { "type": "string", "format": "date-time", "example": "2026-04-07T10:00:00Z" }
+        }
+      },
+      "GenerateRequest": {
+        "type": "object",
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "type": "string", "format": "date-time", "example": "2026-04-01T00:00:00Z" },
+          "to": { "type": "string", "format": "date-time", "example": "2026-04-30T00:00:00Z" }
         }
       },
       "Error": {
         "type": "object",
         "properties": {
-          "error": { "type": "string", "example": "task not found" }
+          "error": { "type": "string", "example": "schedule not found" }
         }
       }
     }
