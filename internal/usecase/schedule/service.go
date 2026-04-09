@@ -222,8 +222,10 @@ func calculateDates(s *scheduledomain.Schedule, from, to time.Time) []time.Time 
 		cur := time.Date(fromDay.Year(), fromDay.Month(), 1, 0, 0, 0, 0, time.UTC)
 		for !cur.After(toDay) {
 			candidate := time.Date(cur.Year(), cur.Month(), day, 0, 0, 0, 0, time.UTC)
-			if !candidate.Before(fromDay) && !candidate.After(toDay) {
-				dates = append(dates, candidate)
+			if candidate.Month() == cur.Month() {
+				if !candidate.Before(fromDay) && !candidate.After(toDay) {
+					dates = append(dates, candidate)
+				}
 			}
 			cur = cur.AddDate(0, 1, 0)
 		}
@@ -299,8 +301,8 @@ func validateInput(
 			return normalizedInput{}, fmt.Errorf("%w: start_date is required for daily schedule", ErrInvalidInput)
 		}
 	case scheduledomain.TypeMonthly:
-		if dayOfMonth == nil || *dayOfMonth < 1 || *dayOfMonth > 30 {
-			return normalizedInput{}, fmt.Errorf("%w: day_of_month must be between 1 and 30 for monthly schedule", ErrInvalidInput)
+		if dayOfMonth == nil || *dayOfMonth < 1 || *dayOfMonth > 31 {
+			return normalizedInput{}, fmt.Errorf("%w: day_of_month must be between 1 and 31 for monthly schedule", ErrInvalidInput)
 		}
 	case scheduledomain.TypeSpecificDates:
 		if len(dates) == 0 {
